@@ -3,6 +3,10 @@ import dotenv from 'dotenv';
 import cors from 'cors';
 import contactRoute from './routes/contact.js';
 
+app.get('/', (req, res) => {
+    res.send('Great Lakes API is online ✅');
+  });
+  
 dotenv.config();
 
 const app = express();
