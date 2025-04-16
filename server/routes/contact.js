@@ -1,10 +1,15 @@
 import express from 'express';
 import sendMail from '../utils/sendMail.js';
+import { logToSheet } from '../utils/logToSheet.js';
+
+await logToSheet({ name, email, message });
 
 const router = express.Router();
 
 router.post('/', async (req, res) => {
   const { name, email, message } = req.body;
+
+await logToSheet({ name, email, message });
 
   console.log('[CONTACT] Incoming message:', { name, email, message });
 
