@@ -4,7 +4,7 @@ import Navbar from './components/Navbar';
 import Hero from './components/Hero';
 import Services from './components/Services';
 import Testimonials from './components/Testimonials';
-import Blog from './components/Blog';
+//import Blog from './components/Blog'; 
 import ContactForm from './components/ContactForm';
 import Footer from './components/Footer';
 
@@ -19,7 +19,7 @@ function App() {
       <Hero />
       <Services />
       <Testimonials />
-      <Blog />
+      //<Blog />
       <ContactForm />
       <Footer />
     </>
