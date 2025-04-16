@@ -2,6 +2,7 @@ import express from 'express';
 import sendMail from '../utils/sendMail.js';
 import { logToSheet } from '../utils/logToSheet.js';
 
+const { name, email, message } = req.body;
 await logToSheet({ name, email, message });
 
 const router = express.Router();
