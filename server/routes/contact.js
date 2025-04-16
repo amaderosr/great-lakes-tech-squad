@@ -1,3 +1,4 @@
+import axios from 'axios';
 import express from 'express';
 import sendMail from '../utils/sendMail.js';
 import { logToSheet } from '../utils/logToSheet.js';
@@ -6,7 +7,20 @@ const router = express.Router();
 
 router.post('/', async (req, res) => {
   try {
-    const { name, email, message } = req.body;
+    const { name, email, message, captchaToken } = req.body;
+    console.log('[CAPTCHA] Token received:', captchaToken);
+
+if (!captchaToken) {
+  return res.status(400).json({ error: 'Captcha token missing' });
+}
+
+// 🔐 Verify with Google
+const verifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captchaToken}`;
+const captchaRes = await axios.post(verifyURL);
+
+if (!captchaRes.data.success) {
+  return res.status(403).json({ error: 'Captcha verification failed' });
+}
 
     // 🛡 Validation
     if (!name || !email || !message) {
