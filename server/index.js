@@ -6,7 +6,11 @@ import contactRoute from './routes/contact.js';
 dotenv.config();
 
 const app = express();
-app.use(cors());
+app.use(cors({
+    origin: 'https://great-lakes-tech-squad.vercel.app',
+    methods: ['POST', 'GET'],
+    credentials: false
+  }));
 app.use(express.json());
 
 app.get('/', (req, res) => {
