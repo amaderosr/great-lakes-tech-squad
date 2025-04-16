@@ -7,12 +7,15 @@ const SPREADSHEET_ID = process.env.SHEET_ID;
 
 export const logToSheet = async ({ name, email, message }) => {
   try {
-    // 🔐 Decode credentials from .env and write to /tmp
+    // 🔐 Decode service account key from .env
     const credsDecoded = Buffer.from(process.env.GOOGLE_CREDS_BASE64, 'base64').toString('utf-8');
+
+    // 📄 Write creds to /tmp (Render-safe path)
     const keyFilePath = path.resolve('/tmp/credentials.json');
     writeFileSync(keyFilePath, credsDecoded);
+    console.log('[🔐] Credentials written to /tmp/credentials.json');
 
-    // 🔐 Authenticate with Google
+    // 🔑 Auth with Google API
     const auth = new google.auth.GoogleAuth({
       keyFile: keyFilePath,
       scopes: SCOPES,
@@ -21,16 +24,17 @@ export const logToSheet = async ({ name, email, message }) => {
     const client = await auth.getClient();
     const sheets = google.sheets({ version: 'v4', auth: client });
 
-    // ⏰ Timestamp for logs
     const now = new Date().toISOString();
+    const values = [[name, email, message, now]];
 
-    // 📝 Append to Google Sheet
+    console.log('[🧪 Google Sheets] Sending values:', values);
+
     await sheets.spreadsheets.values.append({
       spreadsheetId: SPREADSHEET_ID,
       range: 'Sheet1!A:D',
       valueInputOption: 'USER_ENTERED',
       requestBody: {
-        values: [[name, email, message, now]],
+        values,
       },
     });
 
