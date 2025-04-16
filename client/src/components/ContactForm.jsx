@@ -20,6 +20,8 @@ function ContactForm() {
           ...form,
           captchaToken, // ✅ Send token to server
         }
+      ); // ✅ THIS closes the axios call!
+      
       console.log('[ContactForm] Server response:', res.data);
       setForm({ name: '', email: '', message: '' });
       toast.success('✅ Message sent!');
