@@ -1,26 +1,29 @@
-import React from "react";
-import Navbar from "./components/Navbar";
-import Hero from "./components/Hero";
-import Services from "./components/Services";
-import About from "./components/About";
-import Testimonials from "./components/Testimonials";
-import BlogPreview from "./components/BlogPreview";
-import ContactForm from "./components/ContactForm";
-import AIHelpWidget from "./components/AIHelpWidget";
+import React from 'react';
+import { Toaster } from 'react-hot-toast';
+import Navbar from './components/Navbar';
+import Hero from './components/Hero';
+import Services from './components/Services';
+import Testimonials from './components/Testimonials';
+import Blog from './components/Blog';
+import ContactForm from './components/ContactForm';
+import Footer from './components/Footer';
 
-const App = () => {
+function App() {
   return (
     <>
+      {/* 🔥 Global toaster notification system */}
+      <Toaster position="top-center" toastOptions={{ duration: 4000 }} />
+
+      {/* 🧩 Page layout components */}
       <Navbar />
       <Hero />
       <Services />
-      <About />
       <Testimonials />
-      <BlogPreview />
+      <Blog />
       <ContactForm />
-      <AIHelpWidget />
+      <Footer />
     </>
   );
-};
+}
 
 export default App;
