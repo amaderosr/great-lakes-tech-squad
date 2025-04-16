@@ -11,7 +11,7 @@ const ContactForm = () => {
     console.log('[ContactForm] Sending form:', form); // 💬 logs name, email, message
   
     try {
-      const res = await axios.post('http://localhost:5001/api/contact', form);
+      const res = await axios.post('https://great-lakes-api.onrender.com/api/contact', form);
       console.log('[ContactForm] Server response:', res.data); // ✅ log backend reply
       alert('Message sent successfully!');
       setForm({ name: '', email: '', message: '' });
