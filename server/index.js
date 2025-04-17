@@ -43,7 +43,9 @@ app.use('/api/contact', contactRoute);
 app.use('/api/ai', aiRoute);
 
 // 🚀 Start server
-const PORT = process.env.PORT || 3001; // 🔄 fallback, but let Render inject correct PORT
-app.listen(PORT, () => {
+const PORT = process.env.PORT || 3001;
+
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`🚀 Server running on port ${PORT}`);
+  console.log('[ENV DEBUG] PORT:', process.env.PORT);
 });
