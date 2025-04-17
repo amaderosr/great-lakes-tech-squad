@@ -1,4 +1,3 @@
-// server/routes/ai.js
 import express from 'express';
 import axios from 'axios';
 
@@ -20,12 +19,10 @@ router.post('/', async (req, res) => {
           {
             role: 'system',
             content:
-              'You are an AI helpdesk assistant for a small IT company called Great Lakes Tech Squad. Answer in a friendly, helpful tone and ask if they’d like human help if you cannot answer.',
+              'You are the AI helpdesk assistant for Great Lakes Tech Squad.',
           },
           { role: 'user', content: message },
         ],
-        temperature: 0.7,
-        max_tokens: 300,
       },
       {
         headers: {
@@ -35,8 +32,7 @@ router.post('/', async (req, res) => {
       }
     );
 
-    const reply = response.data.choices[0].message.content;
-    res.json({ reply });
+    res.json({ reply: response.data.choices[0].message.content });
   } catch (err) {
     console.error('[AI] Error:', err.response?.data || err.message);
     res.status(500).json({ error: 'AI failed to respond' });

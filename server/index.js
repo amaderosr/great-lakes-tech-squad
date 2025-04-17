@@ -8,44 +8,31 @@ import aiRoute from './routes/ai.js';
 dotenv.config();
 const app = express();
 
-// 🛡️ Allow Vercel frontend explicitly
-const corsOptions = {
-  origin: 'https://great-lakes-tech-squad.vercel.app',
-  methods: ['GET', 'POST', 'OPTIONS'],
-  allowedHeaders: ['Content-Type'],
-  credentials: false,
-};
+// ✅ Full CORS allow for debug/final check
+app.use(cors());
+app.options('*', cors());
 
-// 🔍 DEBUGGING: log origin + method on every request
+app.use(express.json());
+
+// 💬 Log CORS & env on every request
 app.use((req, res, next) => {
   console.log('[CORS DEBUG]', {
     origin: req.headers.origin,
     method: req.method,
   });
+  console.log('[ENV DEBUG] OPENAI_API_KEY:', !!process.env.OPENAI_API_KEY);
   next();
 });
 
-// ✅ Apply CORS
-app.use(cors(corsOptions));
-app.options('*', cors(corsOptions)); // allow preflight requests
-
-app.use(express.json());
-
-// ✅ Health check
 app.get('/', (req, res) => {
-  res.send('🌊 Great Lakes API is online and secure!');
+  res.send('✅ Great Lakes API is online');
 });
 
-// 📩 Contact form
 app.use('/api/contact', contactRoute);
-
-// 🧠 AI assistant
 app.use('/api/ai', aiRoute);
 
-// 🚀 Start server
+// 🧠 Critical: Use correct Render PORT
 const PORT = process.env.PORT || 3001;
-
-app.listen(PORT, '0.0.0.0', () => {
-  console.log(`🚀 Server running on port ${PORT}`);
-  console.log('[ENV DEBUG] PORT:', process.env.PORT);
-});
+app.listen(PORT, '0.0.0.0', () =>
+  console.log(`🚀 Server running on port ${PORT}`)
+);
