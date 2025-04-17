@@ -2,6 +2,7 @@ import express from 'express';
 import dotenv from 'dotenv';
 import cors from 'cors';
 import contactRoute from './routes/contact.js';
+import aiRoute from './routes/ai.js';
 
 dotenv.config();
 
@@ -38,6 +39,7 @@ app.get('/', (req, res) => {
 
 // ✅ Contact form route
 app.use('/api/contact', contactRoute);
+app.use('/api/ai', aiRoute);
 
 // ✅ Boot server
 const PORT = process.env.PORT || 5001;
