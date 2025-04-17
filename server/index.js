@@ -6,40 +6,40 @@ import contactRoute from './routes/contact.js';
 import aiRoute from './routes/ai.js';
 
 dotenv.config();
-
 const app = express();
 
-// 🛡️ Strict CORS for Vercel frontend
-const allowedOrigins = [
-  'https://great-lakes-tech-squad.vercel.app',
-];
-
-app.use(cors({
-  origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin)) {
-      callback(null, true);
-    } else {
-      callback(new Error('❌ CORS not allowed from this origin: ' + origin));
-    }
-  },
+// 🛡️ Allow Vercel frontend explicitly
+const corsOptions = {
+  origin: 'https://great-lakes-tech-squad.vercel.app',
   methods: ['GET', 'POST', 'OPTIONS'],
   allowedHeaders: ['Content-Type'],
-  optionsSuccessStatus: 204,
-}));
+  credentials: false,
+};
 
-app.options('*', cors()); // 🔁 Preflight handler
+// 🔍 DEBUGGING: log origin + method on every request
+app.use((req, res, next) => {
+  console.log('[CORS DEBUG]', {
+    origin: req.headers.origin,
+    method: req.method,
+  });
+  next();
+});
+
+// ✅ Apply CORS
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // allow preflight requests
 
 app.use(express.json());
 
-// ✅ Health check route
+// ✅ Health check
 app.get('/', (req, res) => {
   res.send('🌊 Great Lakes API is online and secure!');
 });
 
-// 📨 Contact form route
+// 📩 Contact form
 app.use('/api/contact', contactRoute);
 
-// 🤖 AI Assistant route
+// 🧠 AI assistant
 app.use('/api/ai', aiRoute);
 
 // 🚀 Start server
