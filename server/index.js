@@ -32,7 +32,7 @@ app.use('/api/contact', contactRoute);
 app.use('/api/ai', aiRoute);
 
 // 🚀 PORT: use Render's injected port or fallback
-const PORT = process.env.PORT || 3001;
+const PORT = process.env.PORT || 3000;
 app.listen(PORT, '0.0.0.0', () =>
   console.log(`🚀 Server running on port ${PORT}`)
 );
