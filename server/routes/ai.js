@@ -16,11 +16,7 @@ router.post('/', async (req, res) => {
       {
         model: 'gpt-3.5-turbo',
         messages: [
-          {
-            role: 'system',
-            content:
-              'You are the AI helpdesk assistant for Great Lakes Tech Squad.',
-          },
+          { role: 'system', content: 'You are an AI helpdesk assistant.' },
           { role: 'user', content: message },
         ],
       },
