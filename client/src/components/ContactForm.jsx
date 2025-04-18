@@ -14,10 +14,8 @@ function ContactForm() {
     console.log('[ContactForm] Sending form:', form);
 
     try {
-      const res = await axios.post(
-        'https://great-lakes-tech-squad.onrender.com/api/contact',
-        {
-          ...form,
+      const res = // 👇 Update this line too:
+      await axios.post('https://great-lakes-tech-squad.onrender.com/api/contact', form);
           captchaToken, // ✅ Send token to server
         }
       ); // ✅ THIS closes the axios call!

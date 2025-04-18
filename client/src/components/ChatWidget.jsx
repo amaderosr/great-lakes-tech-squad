@@ -16,8 +16,9 @@ const ChatWidget = () => {
     setInput('');
 
     try {
-      const res = await axios.post('https://great-lakes-api.onrender.com/api/ai', {
-        message: input,
+      const res = // 👇 Update this line to:
+      await axios.post('https://great-lakes-tech-squad.onrender.com/api/ai', {
+        message,
       });
 
       const botReply = { from: 'bot', text: res.data.reply };
