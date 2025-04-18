@@ -8,13 +8,13 @@ import aiRoute from './routes/ai.js';
 dotenv.config();
 const app = express();
 
-// ✅ Full CORS allow for debug/final check
+// ✅ Allow all origins for debug — temporary
 app.use(cors());
-app.options('*', cors());
+app.options('*', cors()); // handles preflight
 
 app.use(express.json());
 
-// 💬 Log CORS & env on every request
+// 🔍 Debug logs for verification
 app.use((req, res, next) => {
   console.log('[CORS DEBUG]', {
     origin: req.headers.origin,
@@ -25,14 +25,14 @@ app.use((req, res, next) => {
 });
 
 app.get('/', (req, res) => {
-  res.send('✅ Great Lakes API is online');
+  res.send('✅ Great Lakes API is live');
 });
 
 app.use('/api/contact', contactRoute);
 app.use('/api/ai', aiRoute);
 
-// 🧠 Critical: Use correct Render PORT
-const PORT = process.env.PORT || 3000;
+// 🚀 PORT: use Render's injected port or fallback
+const PORT = process.env.PORT || 3001;
 app.listen(PORT, '0.0.0.0', () =>
   console.log(`🚀 Server running on port ${PORT}`)
 );
