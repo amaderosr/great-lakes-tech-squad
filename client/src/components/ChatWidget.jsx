@@ -7,31 +7,55 @@ const ChatWidget = () => {
   const [messages, setMessages] = useState([
     { from: 'bot', text: '👋 Hi! I’m your AI assistant. How can I help today?' }
   ]);
+  const [isTyping, setIsTyping] = useState(false);
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-  
+
     const userMessage = { from: 'user', text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
-  
+    setIsTyping(true); // Start typing animation
+
     try {
-      console.log('[Chat] Sending message:', input);
-  
       const res = await axios.post('https://great-lakes-tech-squad.onrender.com/api/ai', {
         message: input,
       });
-  
-      console.log('[Chat] AI response:', res.data);
-  
+
       const botReply = { from: 'bot', text: res.data.reply };
       setMessages((prev) => [...prev, botReply]);
     } catch (err) {
-      console.error('[Chat] Error:', err.response?.data || err.message);
-      setMessages((prev) => [...prev, { from: 'bot', text: '⚠️ Something went wrong.' }]);
+      setMessages((prev) => [...prev, {
+        from: 'bot',
+        text: '⚠️ Something went wrong.',
+      }]);
+    } finally {
+      setIsTyping(false); // Stop typing animation
     }
   };
-  
+
+  const startVoiceInput = () => {
+    if (!('webkitSpeechRecognition' in window)) {
+      alert('Your browser does not support speech recognition.');
+      return;
+    }
+
+    const recognition = new window.webkitSpeechRecognition();
+    recognition.lang = 'en-US';
+    recognition.interimResults = false;
+    recognition.maxAlternatives = 1;
+
+    recognition.onresult = (event) => {
+      setInput(event.results[0][0].transcript);
+    };
+
+    recognition.onerror = (event) => {
+      console.error('Voice error:', event.error);
+    };
+
+    recognition.start();
+  };
+
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {open && (
@@ -39,6 +63,7 @@ const ChatWidget = () => {
           <div className="bg-blue-600 text-white px-4 py-2 font-bold rounded-t-lg">
             Great Lakes Assistant
           </div>
+
           <div className="flex-1 p-3 overflow-y-auto space-y-2 text-sm">
             {messages.map((msg, i) => (
               <div
@@ -50,7 +75,14 @@ const ChatWidget = () => {
                 {msg.text}
               </div>
             ))}
+
+            {isTyping && (
+              <div className="p-2 rounded-lg bg-gray-100 self-start text-sm italic animate-pulse">
+                Assistant is typing...
+              </div>
+            )}
           </div>
+
           <div className="p-2 border-t flex">
             <input
               type="text"
@@ -65,6 +97,12 @@ const ChatWidget = () => {
               className="bg-blue-600 text-white px-3 ml-1 rounded text-sm"
             >
               Send
+            </button>
+            <button
+              onClick={startVoiceInput}
+              className="bg-gray-600 text-white px-3 ml-1 rounded text-sm"
+            >
+              🎙️
             </button>
           </div>
         </div>
