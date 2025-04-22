@@ -10,24 +10,28 @@ const ChatWidget = () => {
 
   const sendMessage = async () => {
     if (!input.trim()) return;
-
+  
     const userMessage = { from: 'user', text: input };
     setMessages((prev) => [...prev, userMessage]);
     setInput('');
-
+  
     try {
-      const res = // 👇 Update this line to:
-      await axios.post('https://great-lakes-tech-squad.onrender.com/api/ai', {
-        message,
+      console.log('[Chat] Sending message:', input);
+  
+      const res = await axios.post('https://great-lakes-tech-squad.onrender.com/api/ai', {
+        message: input,
       });
-
+  
+      console.log('[Chat] AI response:', res.data);
+  
       const botReply = { from: 'bot', text: res.data.reply };
       setMessages((prev) => [...prev, botReply]);
     } catch (err) {
+      console.error('[Chat] Error:', err.response?.data || err.message);
       setMessages((prev) => [...prev, { from: 'bot', text: '⚠️ Something went wrong.' }]);
     }
   };
-
+  
   return (
     <div className="fixed bottom-6 right-6 z-50">
       {open && (
