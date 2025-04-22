@@ -15,10 +15,18 @@ if (!captchaToken) {
 }
 
 // 🔐 Verify with Google
-const verifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captchaToken}`;
-const captchaRes = await axios.post(verifyURL);
+if (!captchaToken) {
+  return res.status(400).json({ error: 'Captcha token missing' });
+}
 
-// 🧠 DEBUG HERE:
+const captchaRes = await axios.post(
+  'https://www.google.com/recaptcha/api/siteverify',
+  new URLSearchParams({
+    secret: process.env.RECAPTCHA_SECRET,
+    response: captchaToken,
+  })
+);
+
 console.log('[reCAPTCHA DEBUG] Google verification response:', captchaRes.data);
 
 if (!captchaRes.data.success) {
