@@ -70,7 +70,7 @@ function ContactForm() {
         />
 
         <ReCAPTCHA
-          sitekey="6LdfNhsrAAAAAJUvR5Ig_wTpdWpppvHgpuq7JUHX"
+          sitekey="6Lcy3yArAAAAAMRakD-Hm5PKTCjU8gPBLWptg2i8"
           onChange={(token) => setCaptchaToken(token)}
           className="mx-auto"
         />
