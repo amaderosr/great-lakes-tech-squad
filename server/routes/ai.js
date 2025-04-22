@@ -1,3 +1,4 @@
+// server/routes/ai.js
 import express from 'express';
 import axios from 'axios';
 
@@ -5,20 +6,14 @@ const router = express.Router();
 
 router.post('/', async (req, res) => {
   const { message } = req.body;
-
-  if (!message) {
-    return res.status(400).json({ error: 'No message provided' });
-  }
+  console.log('[AI REQUEST]', message);
 
   try {
     const response = await axios.post(
       'https://api.openai.com/v1/chat/completions',
       {
         model: 'gpt-3.5-turbo',
-        messages: [
-          { role: 'system', content: 'You are an AI helpdesk assistant.' },
-          { role: 'user', content: message },
-        ],
+        messages: [{ role: 'user', content: message }],
       },
       {
         headers: {
@@ -28,10 +23,13 @@ router.post('/', async (req, res) => {
       }
     );
 
-    res.json({ reply: response.data.choices[0].message.content });
-  } catch (err) {
-    console.error('[AI] Error:', err.response?.data || err.message);
-    res.status(500).json({ error: 'AI failed to respond' });
+    const reply = response.data.choices[0].message.content;
+    console.log('[AI RESPONSE]', reply);
+
+    res.status(200).json({ reply });
+  } catch (error) {
+    console.error('[AI ERROR]', error.response?.data || error.message);
+    res.status(500).json({ error: 'AI request failed' });
   }
 });
 
