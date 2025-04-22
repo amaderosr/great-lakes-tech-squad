@@ -18,6 +18,9 @@ if (!captchaToken) {
 const verifyURL = `https://www.google.com/recaptcha/api/siteverify?secret=${process.env.RECAPTCHA_SECRET}&response=${captchaToken}`;
 const captchaRes = await axios.post(verifyURL);
 
+// 🧠 DEBUG HERE:
+console.log('[reCAPTCHA DEBUG] Google verification response:', captchaRes.data);
+
 if (!captchaRes.data.success) {
   return res.status(403).json({ error: 'Captcha verification failed' });
 }
