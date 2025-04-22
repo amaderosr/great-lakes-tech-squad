@@ -1,35 +1,32 @@
 import express from 'express';
-import dotenv from 'dotenv';
 import cors from 'cors';
-
+import dotenv from 'dotenv';
 import contactRoute from './routes/contact.js';
-import aiRoute from './routes/ai.js';
 
 dotenv.config();
+
 const app = express();
 
-// ✅ Allow all origins
-app.use(cors());
-app.options('*', cors()); // important for OPTIONS requests
+// ✅ Allow Vercel frontend
+const corsOptions = {
+  origin: 'https://great-lakes-tech-squad.vercel.app',
+  methods: ['GET', 'POST', 'OPTIONS'],
+  allowedHeaders: ['Content-Type'],
+};
+
+app.use(cors(corsOptions));
+app.options('*', cors(corsOptions)); // handle preflight requests
 
 app.use(express.json());
 
-app.use((req, res, next) => {
-  console.log('[CORS DEBUG]', {
-    origin: req.headers.origin,
-    method: req.method,
-  });
-  next();
-});
-
 app.get('/', (req, res) => {
-  res.send('✅ Great Lakes API is online');
+  res.send('Great Lakes API is online ✅');
 });
 
 app.use('/api/contact', contactRoute);
-app.use('/api/ai', aiRoute);
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, '0.0.0.0', () =>
+// ✅ Port bind for Render
+const PORT = process.env.PORT || 10000;
+app.listen(PORT, () =>
   console.log(`🚀 Server running on port ${PORT}`)
 );
