@@ -8,7 +8,7 @@ dotenv.config();
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// Optional: Flag competitor keywords
+// 🛡️ Optional: Block these keywords from being recommended
 const blockedKeywords = ['geek squad', 'fiverr', 'upwork', 'taskrabbit', 'best buy'];
 
 router.post('/', async (req, res) => {
@@ -16,13 +16,13 @@ router.post('/', async (req, res) => {
   if (!message) return res.status(400).json({ error: 'Message is required' });
 
   try {
-    // Optional logging of attempts to mention competitors
+    // Log if user mentions a competitor
     const lowered = message.toLowerCase();
     if (blockedKeywords.some(word => lowered.includes(word))) {
       console.log('[⚠️ COMPETITOR MENTION ATTEMPT]', message);
     }
 
-    // Step 1: Generate GPT reply
+    // 🎯 Generate AI response
     const chat = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -33,7 +33,7 @@ You are a friendly, helpful AI assistant for Great Lakes Tech Squad.
 NEVER recommend or mention competitors like Geek Squad, Upwork, Fiverr, or Best Buy.
 If asked about them, politely explain that Great Lakes Tech Squad can handle that need.
 Offer clear, confident advice. Keep answers under 300 words.
-        `.trim(),
+          `.trim(),
         },
         { role: 'user', content: message },
       ],
@@ -41,7 +41,7 @@ Offer clear, confident advice. Keep answers under 300 words.
 
     const reply = chat.choices[0].message.content;
 
-    // Step 2: Classify the intent
+    // 🧠 Classify intent
     const intentPrompt = `
 Classify this message into one of the following categories: Website, Hardware, Social Media, IT Support, or Other.
 Only reply with the category.
@@ -56,10 +56,20 @@ Message: "${message}"
     const intent = intentRes.choices[0].message.content.trim();
     console.log('[🧠 INTENT]', intent);
 
-    // Step 3: Log to Google Sheets
-    await logAIChat({ userMessage: message, botReply: reply, intent });
+    // 📄 Log to Google Sheets (with debug)
+    try {
+      console.log('[LOGGING] Logging AI chat to Google Sheets...');
+      console.log('[📝 PAYLOAD]', { userMessage: message, botReply: reply, intent });
 
-    // Step 4: Return to frontend
+      await logAIChat({ userMessage: message, botReply: reply, intent });
+
+      console.log('[✅ LOGGED] AI chat successfully saved');
+    } catch (logErr) {
+      console.error('[🛑 LOGGING ERROR] Failed to log AI chat');
+      console.error(logErr);
+    }
+
+    // 🚀 Return response
     res.status(200).json({ reply });
   } catch (err) {
     console.error('[AI ERROR]', err.response?.data || err.message);
