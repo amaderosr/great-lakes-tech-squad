@@ -3,43 +3,52 @@ import path from 'path';
 import { writeFileSync } from 'fs';
 
 const SCOPES = ['https://www.googleapis.com/auth/spreadsheets'];
-const SPREADSHEET_ID = process.env.SHEET_ID;
 
+const getSheetsClient = async () => {
+  const credsDecoded = Buffer.from(process.env.GOOGLE_CREDS_BASE64, 'base64').toString('utf-8');
+  const keyFilePath = path.resolve('/tmp/credentials.json');
+  writeFileSync(keyFilePath, credsDecoded);
+  const auth = new google.auth.GoogleAuth({ keyFile: keyFilePath, scopes: SCOPES });
+  const client = await auth.getClient();
+  return google.sheets({ version: 'v4', auth: client });
+};
+
+// 📬 Contact form logger
 export const logToSheet = async ({ name, email, message }) => {
   try {
-    // 🔐 Decode service account key from .env
-    const credsDecoded = Buffer.from(process.env.GOOGLE_CREDS_BASE64, 'base64').toString('utf-8');
-
-    // 📄 Write creds to /tmp (Render-safe path)
-    const keyFilePath = path.resolve('/tmp/credentials.json');
-    writeFileSync(keyFilePath, credsDecoded);
-    console.log('[🔐] Credentials written to /tmp/credentials.json');
-
-    // 🔑 Auth with Google API
-    const auth = new google.auth.GoogleAuth({
-      keyFile: keyFilePath,
-      scopes: SCOPES,
-    });
-
-    const client = await auth.getClient();
-    const sheets = google.sheets({ version: 'v4', auth: client });
-
+    const sheets = await getSheetsClient();
     const now = new Date().toISOString();
     const values = [[name, email, message, now]];
 
-    console.log('[🧪 Google Sheets] Sending values:', values);
-
     await sheets.spreadsheets.values.append({
-      spreadsheetId: SPREADSHEET_ID,
+      spreadsheetId: process.env.SHEET_ID,
       range: 'Sheet1!A:D',
       valueInputOption: 'USER_ENTERED',
-      requestBody: {
-        values,
-      },
+      requestBody: { values },
     });
 
-    console.log(`[📄] Contact logged to Google Sheets for ${email}`);
+    console.log(`[📄] Contact logged for ${email}`);
   } catch (err) {
-    console.error('[SHEET LOG ERROR]', err);
+    console.error('[SHEET LOG ERROR] Contact', err);
+  }
+};
+
+// 🤖 AI assistant logger
+export const logAIChat = async ({ userMessage, botReply, intent }) => {
+  try {
+    const sheets = await getSheetsClient();
+    const now = new Date().toISOString();
+    const values = [[now, userMessage, botReply, intent]];
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.AI_SHEET_ID,
+      range: 'AIChat!A:D',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values },
+    });
+
+    console.log(`[📄] AI Chat logged: "${intent}"`);
+  } catch (err) {
+    console.error('[SHEET LOG ERROR] AI Chat', err);
   }
 };
