@@ -45,6 +45,8 @@ export const logAIChat = async ({ userMessage, botReply, intent }) => {
       range: 'AIChat!A:D',
       valueInputOption: 'USER_ENTERED',
       requestBody: { values },
+    }).catch(err => {
+      console.error('[🛑 SHEET APPEND ERROR]', err.errors || err.message);
     });
 
     console.log(`[📄] AI Chat logged: "${intent}"`);
