@@ -110,8 +110,7 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     // 📄 Log chat
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
-    // 🔍 Extract info
-  // 🕵️ Improved lead extraction for natural responses
+    // 🕵️ Improved lead extraction for natural responses
 const nameMatch = reply.match(/(?:thank you|hi|hello)[\s,]*([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)/i);
 const emailMatch = reply.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
 const phoneMatch = reply.match(/(?:\+?1\s*)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/i);
