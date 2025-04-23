@@ -15,31 +15,31 @@ const systemMessages = {
 You are a friendly AI web consultant for Great Lakes Tech Squad.
 Guide the user through website design, hosting, SEO, or updates.
 Keep answers under 300 words. Never mention competitors.
-`.trim(),
+  `.trim(),
 
   Hardware: `
 You're a tech support assistant for Great Lakes Tech Squad.
 Assist with laptops, desktops, printers, Wi-Fi, and troubleshooting.
 Avoid jargon, stay calm and helpful. Stay under 300 words.
-`.trim(),
+  `.trim(),
 
   'Social Media': `
 You're a social media strategist at Great Lakes Tech Squad.
 Give advice on content, platforms, ads, and growth tips.
 Encourage clients to hire the Squad for managed services.
-`.trim(),
+  `.trim(),
 
   'IT Support': `
 You're an experienced IT admin at Great Lakes Tech Squad.
 Answer questions on networking, backups, cybersecurity, and more.
 Promote monthly IT service plans where appropriate.
-`.trim(),
+  `.trim(),
 
   Other: `
 You’re a general tech expert for Great Lakes Tech Squad.
 Answer all questions confidently and promote our services when possible.
 Stay on-brand and helpful. Max 300 words.
-`.trim(),
+  `.trim(),
 };
 
 router.post('/', async (req, res) => {
@@ -52,7 +52,7 @@ router.post('/', async (req, res) => {
       console.log('[⚠️ COMPETITOR MENTION ATTEMPT]', message);
     }
 
-    // 🧠 Classify intent
+    // 🧠 Intent classification
     const intentPrompt = `
 Classify this message into one of the following categories: Website, Hardware, Social Media, IT Support, or Other.
 Only reply with the category.
@@ -67,22 +67,14 @@ Message: "${message}"
     const intent = intentRes.choices[0].message.content.trim();
     console.log('[🧠 INTENT]', intent);
 
-    // 📄 Log base system intent (optional)
     const systemIntent = systemMessages[intent] || systemMessages['Other'];
 
-    // 📍 LEAD extraction from previous convo
-    let name = '';
-    let email = '';
-    let phone = '';
-    let preferredTime = '';
-    let summary = '';
-
-    // 🧠 Dynamic system message
+    // 💬 Lead-capture persona message
     const leadPrompt = `
 You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
 
 🎯 GOALS:
-- ${name && email && phone ? '✅ The user has already provided their name, email, and phone.' : 'Politely collect the user\'s **name**, **email**, and **phone number**'}
+- Politely collect the user's **name**, **email**, and **phone number**
 - Ask **what day/time works best** for a follow-up — don't suggest one yourself.
 - Provide a **brief, confident summary** of what Great Lakes Tech Squad can do to fix their issue
 - Mention that **monthly service plans** are available for proactive support — but don't hard sell
@@ -92,9 +84,9 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
 - Friendly, professional, and solutions-focused
 - Always encourage scheduling a call
 - No more than 6 sentences per reply
-`.trim();
+    `.trim();
 
-    // 🧠 Generate assistant response
+    // 🎯 Generate reply
     const chat = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -110,23 +102,23 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     // 📄 Log chat
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
-   // 🕵️ Improved lead extraction — no duplicate declarations
-let name = '';
-let email = '';
-let phone = '';
-let preferredTime = '';
-let summary = '';
+    // 🧠 Extract user info (lead)
+    let name = '';
+    let email = '';
+    let phone = '';
+    let preferredTime = '';
+    let summary = '';
 
-const nameMatch = reply.match(/(?:thank you|hi|hello)[\s,]*([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)/i);
-const emailMatch = reply.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
-const phoneMatch = reply.match(/(?:\+?1\s*)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/i);
-const timeMatch = reply.match(/(?:at|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(?:at)?\s*([0-9]{1,2}(?::[0-9]{2})?\s*[ap]m)/i);
+    const nameMatch = reply.match(/(?:thank you|hi|hello)[\s,]*([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)/i);
+    const emailMatch = reply.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+    const phoneMatch = reply.match(/(?:\+?1\s*)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/i);
+    const timeMatch = reply.match(/(?:at|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(?:at)?\s*([0-9]{1,2}(?::[0-9]{2})?\s*[ap]m)/i);
 
-name = nameMatch?.[1]?.trim() || '';
-email = emailMatch?.[0]?.trim() || '';
-phone = phoneMatch?.[1]?.trim() || '';
-preferredTime = timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}`.trim() : '';
-summary = ''; // Reserved for future use
+    name = nameMatch?.[1]?.trim() || '';
+    email = emailMatch?.[0]?.trim() || '';
+    phone = phoneMatch?.[1]?.trim() || '';
+    preferredTime = timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}`.trim() : '';
+    summary = ''; // Optional future use
 
     console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
