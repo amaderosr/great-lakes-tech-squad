@@ -66,7 +66,7 @@ export const logAILead = async ({ name, email, phone, preferredTime }) => {
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.AI_SHEET_ID,
-      range: `'AI Leads'!A:E`, // <- quotes ✅
+      range: 'AILeads!A:E',// <- quotes ✅
       valueInputOption: 'USER_ENTERED',
       requestBody: { values },
     });
