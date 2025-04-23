@@ -55,21 +55,21 @@ export const logAIChat = async ({ userMessage, botReply, intent }) => {
   }
 };
 
-// 📈 Log AI lead to Google Sheets
+// ✅ AI Lead Logger
 export const logAILead = async ({ name, email, phone, preferredTime }) => {
   try {
     const sheets = await getSheetsClient();
     const now = new Date().toISOString();
-    const values = [[now, name, email, phone, preferredTime]];
+    const values = [[name, email, phone, preferredTime, now]];
 
     await sheets.spreadsheets.values.append({
       spreadsheetId: process.env.AI_SHEET_ID,
-      range: 'AI Leads!A:E',
+      range: `'AI Leads'!A:E`, // <- this is the fix ✅ quotes required if sheet name has spaces
       valueInputOption: 'USER_ENTERED',
       requestBody: { values },
     });
 
-    console.log(`[📇] AI Lead logged: ${email}`);
+    console.log(`[📥 LEAD LOGGED] ${name} - ${email}`);
   } catch (err) {
     console.error('[SHEET LOG ERROR] AI Lead', err);
   }
