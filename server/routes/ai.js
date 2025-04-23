@@ -67,30 +67,39 @@ Message: "${message}"
     const intent = intentRes.choices[0].message.content.trim();
     console.log('[🧠 INTENT]', intent);
 
-    // 🧠 AI response
-    const chat = await openai.chat.completions.create({
-      model: 'gpt-3.5-turbo',
-      messages: [
-        { role: 'system', content: systemMessages[intent] || systemMessages['Other'] },
-        {
-          role: 'system',
-          content: `
+    // 📄 Log base system intent (optional)
+    const systemIntent = systemMessages[intent] || systemMessages['Other'];
+
+    // 📍 LEAD extraction from previous convo
+    let name = '';
+    let email = '';
+    let phone = '';
+    let preferredTime = '';
+    let summary = '';
+
+    // 🧠 Dynamic system message
+    const leadPrompt = `
 You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
 
 🎯 GOALS:
-- Politely collect the user's **name**, **email**, and **phone number**
-- Suggest a good **date & time** for a follow-up call
+- ${name && email && phone ? '✅ The user has already provided their name, email, and phone.' : 'Politely collect the user\'s **name**, **email**, and **phone number**'}
+- Ask **what day/time works best** for a follow-up — don't suggest one yourself.
 - Provide a **brief, confident summary** of what Great Lakes Tech Squad can do to fix their issue
 - Mention that **monthly service plans** are available for proactive support — but don't hard sell
-- Ask **what day/time works best** for a follow-up — don't suggest one yourself.
 - Do not mention or recommend competitors.
 
 🧠 RESPONSE STYLE:
 - Friendly, professional, and solutions-focused
 - Always encourage scheduling a call
 - No more than 6 sentences per reply
-`.trim(),
-        },
+`.trim();
+
+    // 🧠 Generate assistant response
+    const chat = await openai.chat.completions.create({
+      model: 'gpt-3.5-turbo',
+      messages: [
+        { role: 'system', content: systemIntent },
+        { role: 'system', content: leadPrompt },
         { role: 'user', content: message },
       ],
     });
@@ -98,21 +107,21 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     const reply = chat.choices[0].message.content;
     console.log('[🤖 REPLY]', reply);
 
-    // 📄 Log full chat
+    // 📄 Log chat
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
-    // 🕵️ Extract lead info
+    // 🔍 Extract info
     const nameMatch = reply.match(/name:\s*(.*)/i);
-const emailMatch = reply.match(/email:\s*([^\s]+)/i);
-const phoneMatch = reply.match(/phone:\s*([^\n]+)/i);
-const timeMatch = reply.match(/preferred time:\s*(.*)/i);
-const summaryMatch = reply.match(/summary:\s*(.*)/i);
+    const emailMatch = reply.match(/email:\s*([^\s]+)/i);
+    const phoneMatch = reply.match(/phone:\s*([^\n]+)/i);
+    const timeMatch = reply.match(/preferred time:\s*(.*)/i);
+    const summaryMatch = reply.match(/summary:\s*(.*)/i);
 
-const name = nameMatch?.[1]?.trim() || '';
-const email = emailMatch?.[1]?.trim() || '';
-const phone = phoneMatch?.[1]?.trim() || '';
-const preferredTime = timeMatch?.[1]?.trim() || '';
-const summary = summaryMatch?.[1]?.trim() || '';
+    name = nameMatch?.[1]?.trim() || '';
+    email = emailMatch?.[1]?.trim() || '';
+    phone = phoneMatch?.[1]?.trim() || '';
+    preferredTime = timeMatch?.[1]?.trim() || '';
+    summary = summaryMatch?.[1]?.trim() || '';
 
     console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
