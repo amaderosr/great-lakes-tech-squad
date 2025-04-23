@@ -111,17 +111,17 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
     // 🔍 Extract info
-  // 🕵️ Improved lead extraction
-const nameMatch = reply.match(/(?:name is|I(?:'| a)m)\s+([A-Z][a-z]+\s[A-Z][a-z]+)/i);
+  // 🕵️ Improved lead extraction for natural responses
+const nameMatch = reply.match(/(?:thank you|hi|hello)[\s,]*([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)/i);
 const emailMatch = reply.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
-const phoneMatch = reply.match(/(?:\+?1\s*[-.(]*\d{3}[-.)\s]*\d{3}[-.\s]*\d{4})/i);
-const timeMatch = reply.match(/(?:tomorrow|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(at)?\s*([0-9]{1,2}(:[0-9]{2})?\s*[ap]m)/i);
+const phoneMatch = reply.match(/(?:\+?1\s*)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/i);
+const timeMatch = reply.match(/(?:at|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(?:at)?\s*([0-9]{1,2}(?::[0-9]{2})?\s*[ap]m)/i);
 
 const name = nameMatch?.[1]?.trim() || '';
-const email = emailMatch?.[0] || '';
-const phone = phoneMatch?.[0] || '';
-const preferredTime = timeMatch ? `${timeMatch[1] || ''} ${timeMatch[3]}`.trim() : '';
-const summary = ''; // optional for now
+const email = emailMatch?.[0]?.trim() || '';
+const phone = phoneMatch?.[1]?.trim() || '';
+const preferredTime = timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}`.trim() : '';
+const summary = ''; // Reserved for future use
 
     console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
