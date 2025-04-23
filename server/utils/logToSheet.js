@@ -54,3 +54,23 @@ export const logAIChat = async ({ userMessage, botReply, intent }) => {
     console.error('[SHEET LOG ERROR] AI Chat', err);
   }
 };
+
+// 📈 Log AI lead to Google Sheets
+export const logAILead = async ({ name, email, phone, preferredTime }) => {
+  try {
+    const sheets = await getSheetsClient();
+    const now = new Date().toISOString();
+    const values = [[now, name, email, phone, preferredTime]];
+
+    await sheets.spreadsheets.values.append({
+      spreadsheetId: process.env.AI_SHEET_ID,
+      range: 'AI Leads!A:E',
+      valueInputOption: 'USER_ENTERED',
+      requestBody: { values },
+    });
+
+    console.log(`[📇] AI Lead logged: ${email}`);
+  } catch (err) {
+    console.error('[SHEET LOG ERROR] AI Lead', err);
+  }
+};

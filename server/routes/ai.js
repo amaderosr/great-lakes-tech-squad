@@ -2,6 +2,7 @@ import express from 'express';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { logAIChat } from '../utils/logToSheet.js';
+import { logAIChat, logAILead } from '../utils/logToSheet.js';
 
 dotenv.config();
 
@@ -98,6 +99,21 @@ Message: "${message}"
 
     // 🗂️ Log interaction
     await logAIChat({ userMessage: message, botReply: reply, intent });
+
+// 🤖 OPTIONAL: Extract contact details from reply
+const nameMatch = reply.match(/name is ([A-Za-z\s]+)/i);
+const emailMatch = reply.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+const phoneMatch = reply.match(/(\+?\d[\d\s().-]{8,})/i);
+const timeMatch = reply.match(/(?:at|on)\s+([0-9apm:\s]+)/i);
+
+const name = nameMatch?.[1] || '';
+const email = emailMatch?.[0] || '';
+const phone = phoneMatch?.[0] || '';
+const preferredTime = timeMatch?.[1] || '';
+
+if (email && phone) {
+  await logAILead({ name, email, phone, preferredTime });
+}
 
     // 📤 Send response to frontend
     res.status(200).json({ reply });
