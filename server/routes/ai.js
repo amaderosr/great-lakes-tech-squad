@@ -111,17 +111,17 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
     // 🔍 Extract info
-    const nameMatch = reply.match(/name:\s*(.*)/i);
-    const emailMatch = reply.match(/email:\s*([^\s]+)/i);
-    const phoneMatch = reply.match(/phone:\s*([^\n]+)/i);
-    const timeMatch = reply.match(/preferred time:\s*(.*)/i);
-    const summaryMatch = reply.match(/summary:\s*(.*)/i);
+  // 🕵️ Improved lead extraction
+const nameMatch = reply.match(/(?:name is|I(?:'| a)m)\s+([A-Z][a-z]+\s[A-Z][a-z]+)/i);
+const emailMatch = reply.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
+const phoneMatch = reply.match(/(?:\+?1\s*[-.(]*\d{3}[-.)\s]*\d{3}[-.\s]*\d{4})/i);
+const timeMatch = reply.match(/(?:tomorrow|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(at)?\s*([0-9]{1,2}(:[0-9]{2})?\s*[ap]m)/i);
 
-    name = nameMatch?.[1]?.trim() || '';
-    email = emailMatch?.[1]?.trim() || '';
-    phone = phoneMatch?.[1]?.trim() || '';
-    preferredTime = timeMatch?.[1]?.trim() || '';
-    summary = summaryMatch?.[1]?.trim() || '';
+const name = nameMatch?.[1]?.trim() || '';
+const email = emailMatch?.[0] || '';
+const phone = phoneMatch?.[0] || '';
+const preferredTime = timeMatch ? `${timeMatch[1] || ''} ${timeMatch[3]}`.trim() : '';
+const summary = ''; // optional for now
 
     console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
