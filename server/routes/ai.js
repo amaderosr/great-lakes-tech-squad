@@ -109,20 +109,22 @@ RESPONSE STYLE:
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
     // 🕵️ Extract lead info
-    const nameMatch = reply.match(/name:\s*(.+)/i);
+    const nameMatch = reply.match(/name:\s*(.*)/i);
 const emailMatch = reply.match(/email:\s*([^\s]+)/i);
 const phoneMatch = reply.match(/phone:\s*([^\n]+)/i);
-const timeMatch = reply.match(/preferred time:\s*([^\n]+)/i);
+const timeMatch = reply.match(/preferred time:\s*(.*)/i);
+const summaryMatch = reply.match(/summary:\s*(.*)/i);
 
 const name = nameMatch?.[1]?.trim() || '';
 const email = emailMatch?.[1]?.trim() || '';
 const phone = phoneMatch?.[1]?.trim() || '';
 const preferredTime = timeMatch?.[1]?.trim() || '';
+const summary = summaryMatch?.[1]?.trim() || '';
 
     console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
     if (email && phone) {
-      await logAILead({ name, email, phone, preferredTime });
+      await logAILead({ name, email, phone, preferredTime, summary });
       console.log(`[✅ LEAD LOGGED] ${name} - ${email} - ${phone}`);
     } else {
       console.warn('[⚠️ INCOMPLETE LEAD]', { name, email, phone });
