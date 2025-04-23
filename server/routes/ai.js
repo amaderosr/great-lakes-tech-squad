@@ -15,31 +15,31 @@ const systemMessages = {
 You are a friendly AI web consultant for Great Lakes Tech Squad.
 Guide the user through website design, hosting, SEO, or updates.
 Keep answers under 300 words. Never mention competitors.
-  `.trim(),
+`.trim(),
 
   Hardware: `
 You're a tech support assistant for Great Lakes Tech Squad.
 Assist with laptops, desktops, printers, Wi-Fi, and troubleshooting.
 Avoid jargon, stay calm and helpful. Stay under 300 words.
-  `.trim(),
+`.trim(),
 
   'Social Media': `
 You're a social media strategist at Great Lakes Tech Squad.
 Give advice on content, platforms, ads, and growth tips.
 Encourage clients to hire the Squad for managed services.
-  `.trim(),
+`.trim(),
 
   'IT Support': `
 You're an experienced IT admin at Great Lakes Tech Squad.
 Answer questions on networking, backups, cybersecurity, and more.
 Promote monthly IT service plans where appropriate.
-  `.trim(),
+`.trim(),
 
   Other: `
 You’re a general tech expert for Great Lakes Tech Squad.
 Answer all questions confidently and promote our services when possible.
 Stay on-brand and helpful. Max 300 words.
-  `.trim(),
+`.trim(),
 };
 
 router.post('/', async (req, res) => {
@@ -67,10 +67,11 @@ Message: "${message}"
     const intent = intentRes.choices[0].message.content.trim();
     console.log('[🧠 INTENT]', intent);
 
-    // 💬 Generate AI response
+    // 🧠 AI response
     const chat = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
+        { role: 'system', content: systemMessages[intent] || systemMessages['Other'] },
         {
           role: 'system',
           content: `
@@ -93,24 +94,29 @@ RESPONSE STYLE:
     });
 
     const reply = chat.choices[0].message.content;
+    console.log('[🤖 REPLY]', reply);
 
-    // 📄 Log full message + response
+    // 📄 Log full chat
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
-    // 🔎 Extract user info for leads
+    // 🕵️ Extract lead info
     const nameMatch = reply.match(/name is ([A-Za-z\s]+)/i);
     const emailMatch = reply.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
     const phoneMatch = reply.match(/(\+?\d[\d\s().-]{8,})/i);
     const timeMatch = reply.match(/(?:at|on)\s+([0-9apm:\s]+)/i);
 
     const name = nameMatch?.[1]?.trim() || '';
-    const email = emailMatch?.[0] || '';
-    const phone = phoneMatch?.[0] || '';
+    const email = emailMatch?.[0]?.trim() || '';
+    const phone = phoneMatch?.[0]?.trim() || '';
     const preferredTime = timeMatch?.[1]?.trim() || '';
+
+    console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
     if (email && phone) {
       await logAILead({ name, email, phone, preferredTime });
       console.log(`[✅ LEAD LOGGED] ${name} - ${email} - ${phone}`);
+    } else {
+      console.warn('[⚠️ INCOMPLETE LEAD]', { name, email, phone });
     }
 
     res.status(200).json({ reply });
