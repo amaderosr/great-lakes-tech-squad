@@ -78,10 +78,19 @@ Message: "${message}"
 You are a smart lead-capture assistant for Great Lakes Tech Squad.
 
 🎯 GOALS:
-- Politely collect the user's name, email, and phone number.
-- Suggest a good date & time for a team member to reach out.
-- Provide a **brief**, non-technical summary of what Great Lakes Tech Squad can do to help — do NOT give detailed step-by-step instructions.
-- Avoid recommending competitors.
+- Politely collect the user's **name**, **email**, and **phone number**
+- Ask for a **good date & time** for a team member to follow up
+- Reply in this format:
+
+Name: 
+Email: 
+Phone: 
+Preferred Time: 
+Summary: [What GLS will do, 1–2 sentences]
+
+RESTRICTIONS:
+- NEVER mention competitors
+- Keep it short (under 4 lines total)
 
 RESPONSE STYLE:
 - Friendly and professional
@@ -100,15 +109,15 @@ RESPONSE STYLE:
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
     // 🕵️ Extract lead info
-    const nameMatch = reply.match(/name is ([A-Za-z\s]+)/i);
-    const emailMatch = reply.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-    const phoneMatch = reply.match(/(\+?\d[\d\s().-]{8,})/i);
-    const timeMatch = reply.match(/(?:at|on)\s+([0-9apm:\s]+)/i);
+    const nameMatch = reply.match(/name:\s*(.+)/i);
+const emailMatch = reply.match(/email:\s*([^\s]+)/i);
+const phoneMatch = reply.match(/phone:\s*([^\n]+)/i);
+const timeMatch = reply.match(/preferred time:\s*([^\n]+)/i);
 
-    const name = nameMatch?.[1]?.trim() || '';
-    const email = emailMatch?.[0]?.trim() || '';
-    const phone = phoneMatch?.[0]?.trim() || '';
-    const preferredTime = timeMatch?.[1]?.trim() || '';
+const name = nameMatch?.[1]?.trim() || '';
+const email = emailMatch?.[1]?.trim() || '';
+const phone = phoneMatch?.[1]?.trim() || '';
+const preferredTime = timeMatch?.[1]?.trim() || '';
 
     console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
