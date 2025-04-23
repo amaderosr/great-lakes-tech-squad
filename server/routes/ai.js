@@ -1,7 +1,6 @@
 import express from 'express';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
-import { logAIChat } from '../utils/logToSheet.js';
 import { logAIChat, logAILead } from '../utils/logToSheet.js';
 
 dotenv.config();
@@ -9,10 +8,8 @@ dotenv.config();
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
-// 🛡 Blocked competitor keywords
 const blockedKeywords = ['geek squad', 'fiverr', 'upwork', 'taskrabbit', 'best buy'];
 
-// 🎭 Intent-specific personas
 const systemMessages = {
   Website: `
 You are a friendly AI web consultant for Great Lakes Tech Squad.
@@ -55,7 +52,7 @@ router.post('/', async (req, res) => {
       console.log('[⚠️ COMPETITOR MENTION ATTEMPT]', message);
     }
 
-    // 🧠 Classify user intent
+    // 🧠 Classify intent
     const intentPrompt = `
 Classify this message into one of the following categories: Website, Hardware, Social Media, IT Support, or Other.
 Only reply with the category.
@@ -70,25 +67,25 @@ Message: "${message}"
     const intent = intentRes.choices[0].message.content.trim();
     console.log('[🧠 INTENT]', intent);
 
-    // 💬 Generate dynamic response
+    // 💬 Generate AI response
     const chat = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
         {
           role: 'system',
           content: `
-    You are a smart lead-capture assistant for Great Lakes Tech Squad.
-    
-    🎯 GOALS:
-    - Politely collect the user's name, email, and phone number.
-    - Suggest a good date & time for a team member to reach out.
-    - Provide a **brief**, non-technical summary of what Great Lakes Tech Squad can do to help — do NOT give detailed step-by-step instructions.
-    - Avoid recommending competitors.
-    
-    RESPONSE STYLE:
-    - Friendly and professional
-    - Limit replies to 3-4 sentences
-    - Always encourage the user to schedule help
+You are a smart lead-capture assistant for Great Lakes Tech Squad.
+
+🎯 GOALS:
+- Politely collect the user's name, email, and phone number.
+- Suggest a good date & time for a team member to reach out.
+- Provide a **brief**, non-technical summary of what Great Lakes Tech Squad can do to help — do NOT give detailed step-by-step instructions.
+- Avoid recommending competitors.
+
+RESPONSE STYLE:
+- Friendly and professional
+- Limit replies to 3-4 sentences
+- Always encourage the user to schedule help
           `.trim(),
         },
         { role: 'user', content: message },
@@ -97,25 +94,25 @@ Message: "${message}"
 
     const reply = chat.choices[0].message.content;
 
-    // 🗂️ Log interaction
+    // 📄 Log full message + response
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
-// 🤖 OPTIONAL: Extract contact details from reply
-const nameMatch = reply.match(/name is ([A-Za-z\s]+)/i);
-const emailMatch = reply.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
-const phoneMatch = reply.match(/(\+?\d[\d\s().-]{8,})/i);
-const timeMatch = reply.match(/(?:at|on)\s+([0-9apm:\s]+)/i);
+    // 🔎 Extract user info for leads
+    const nameMatch = reply.match(/name is ([A-Za-z\s]+)/i);
+    const emailMatch = reply.match(/\b[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/i);
+    const phoneMatch = reply.match(/(\+?\d[\d\s().-]{8,})/i);
+    const timeMatch = reply.match(/(?:at|on)\s+([0-9apm:\s]+)/i);
 
-const name = nameMatch?.[1] || '';
-const email = emailMatch?.[0] || '';
-const phone = phoneMatch?.[0] || '';
-const preferredTime = timeMatch?.[1] || '';
+    const name = nameMatch?.[1]?.trim() || '';
+    const email = emailMatch?.[0] || '';
+    const phone = phoneMatch?.[0] || '';
+    const preferredTime = timeMatch?.[1]?.trim() || '';
 
-if (email && phone) {
-  await logAILead({ name, email, phone, preferredTime });
-}
+    if (email && phone) {
+      await logAILead({ name, email, phone, preferredTime });
+      console.log(`[✅ LEAD LOGGED] ${name} - ${email} - ${phone}`);
+    }
 
-    // 📤 Send response to frontend
     res.status(200).json({ reply });
   } catch (err) {
     console.error('[AI ERROR]', err.response?.data || err.message);
