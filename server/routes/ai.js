@@ -2,7 +2,8 @@ import express from 'express';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { logAIChat, logAILead } from '../utils/logToSheet.js';
-import { sendLeadEmail } from '../utils/sendEmail.js';
+import { sendLeadEmail } from '../utils/sendLeadAlert.js';
+import { sendLeadAlert } from '../utils/sendLeadAlert.js';
 
 dotenv.config();
 
@@ -79,7 +80,11 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
 
     // ✍️ Log full convo
     await logAIChat({ userMessage: message, botReply: reply, intent });
-
+    if (validEmail && validPhone) {
+      await logAILead({ name, email, phone, preferredTime, summary });
+      await sendLeadAlert({ name, email, phone, preferredTime, summary }); // 📩 new alert
+      console.log(`[✅ LEAD LOGGED + EMAILED] ${name} - ${email}`);
+    }
     // 🕵️ Extract
     const sanitize = (v) => v?.trim().replace(/[.,]+$/, '') || '';
 
