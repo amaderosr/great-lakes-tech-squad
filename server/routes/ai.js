@@ -128,12 +128,13 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     const emailMatch = message.match(/(?:email is|email[:\-]?)\s*([^\s]+)/i);
     const phoneMatch = message.match(/(?:phone is|phone[:\-]?)\s*([^\s]+)/i);
     const timeMatch = message.match(/(?:at|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(?:at)?\s*([0-9]{1,2}(?::[0-9]{2})?\s*[ap]m)/i);
+    const sanitize = (str) => str?.trim().replace(/[.,]$/, '') || '';
 
-    name = nameMatch?.[1]?.trim() || '';
-    email = emailMatch?.[1]?.trim() || '';
-    phone = phoneMatch?.[1]?.trim() || '';
-    preferredTime = timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}`.trim() : '';
-    summary = reply.split('\n').find(line => line.toLowerCase().includes('great lakes tech squad'))?.trim() || '';
+      name = sanitize(nameMatch?.[1]);
+      email = sanitize(emailMatch?.[1]);
+      phone = sanitize(phoneMatch?.[1]);
+      preferredTime = sanitize(timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}` : '');
+      summary = reply.split('\n').find(line => line.toLowerCase().includes('great lakes tech squad'))?.trim() || '';
 
     console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
