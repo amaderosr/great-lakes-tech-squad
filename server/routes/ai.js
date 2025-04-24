@@ -2,7 +2,6 @@ import express from 'express';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { logAIChat, logAILead } from '../utils/logToSheet.js';
-import { sendLeadEmail } from '../utils/sendLeadAlert.js';
 import { sendLeadAlert } from '../utils/sendLeadAlert.js';
 
 dotenv.config();
@@ -33,7 +32,7 @@ router.post('/', async (req, res) => {
       console.log('[⚠️ COMPETITOR MENTION ATTEMPT]', message);
     }
 
-    // 🧠 Classify
+    // 🧠 Classify Intent
     const intentPrompt = `
 Classify this into: Website, Hardware, Social Media, IT Support, Software, Smart Home, Mobile, or Other.
 Only respond with the category.
@@ -48,7 +47,7 @@ Message: "${message}"
     const intent = intentRes.choices[0].message.content.trim();
     const systemIntent = systemMessages[intent] || systemMessages['Other'];
 
-    // 📬 Core AI Response
+    // 💬 Compose Lead Prompt
     const leadPrompt = `
 You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
 
@@ -78,33 +77,31 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     const reply = chat.choices[0].message.content;
     console.log('[🤖 REPLY]', reply);
 
-    // ✍️ Log full convo
+    // 📄 Log AI Chat
     await logAIChat({ userMessage: message, botReply: reply, intent });
-    if (validEmail && validPhone) {
-      await logAILead({ name, email, phone, preferredTime, summary });
-      await sendLeadAlert({ name, email, phone, preferredTime, summary }); // 📩 new alert
-      console.log(`[✅ LEAD LOGGED + EMAILED] ${name} - ${email}`);
-    }
-    // 🕵️ Extract
+
+    // 🕵️ Extract Lead Info
     const sanitize = (v) => v?.trim().replace(/[.,]+$/, '') || '';
 
     const nameMatch = message.match(/(?:my name is|name[:\-]?)\s*([A-Z][a-z]+\s?[A-Z]?[a-z]*)/i);
     const emailMatch = message.match(/(?:email is|email[:\-]?)\s*([^\s]+)/i);
     const phoneMatch = message.match(/(?:phone is|phone[:\-]?)\s*([^\s]+)/i);
     const timeMatch = message.match(/(?:at|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(?:at)?\s*([0-9]{1,2}(?::[0-9]{2})?\s*[ap]m)/i);
-    const summary = reply.split('\n').find(line => line.toLowerCase().includes('great lakes tech squad'))?.trim() || '';
 
     const name = sanitize(nameMatch?.[1]);
     const email = sanitize(emailMatch?.[1]);
     const phone = sanitize(phoneMatch?.[1]);
     const preferredTime = sanitize(timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}` : '');
+    const summary = reply.split('\n').find(line => line.toLowerCase().includes('great lakes tech squad'))?.trim() || '';
+
+    console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     const validPhone = /^\d{10}$|^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}$/.test(phone);
 
     if (validEmail && validPhone) {
       await logAILead({ name, email, phone, preferredTime, summary });
-      await sendLeadEmail({ name, email, phone, preferredTime, summary });
+      await sendLeadAlert({ name, email, phone, preferredTime, summary });
       console.log(`[✅ LEAD LOGGED & EMAILED] ${name}`);
     } else {
       console.warn('[⚠️ INCOMPLETE OR INVALID LEAD]', { name, email, phone });
