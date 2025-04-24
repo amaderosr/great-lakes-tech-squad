@@ -4,42 +4,20 @@ import dotenv from 'dotenv';
 import { logAIChat, logAILead } from '../utils/logToSheet.js';
 
 dotenv.config();
-
 const router = express.Router();
 const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
 const blockedKeywords = ['geek squad', 'fiverr', 'upwork', 'taskrabbit', 'best buy'];
 
 const systemMessages = {
-  Website: `
-You are a friendly AI web consultant for Great Lakes Tech Squad.
-Guide the user through website design, hosting, SEO, or updates.
-Keep answers under 300 words. Never mention competitors.
-  `.trim(),
-
-  Hardware: `
-You're a tech support assistant for Great Lakes Tech Squad.
-Assist with laptops, desktops, printers, Wi-Fi, and troubleshooting.
-Avoid jargon, stay calm and helpful. Stay under 300 words.
-  `.trim(),
-
-  'Social Media': `
-You're a social media strategist at Great Lakes Tech Squad.
-Give advice on content, platforms, ads, and growth tips.
-Encourage clients to hire the Squad for managed services.
-  `.trim(),
-
-  'IT Support': `
-You're an experienced IT admin at Great Lakes Tech Squad.
-Answer questions on networking, backups, cybersecurity, and more.
-Promote monthly IT service plans where appropriate.
-  `.trim(),
-
-  Other: `
-You’re a general tech expert for Great Lakes Tech Squad.
-Answer all questions confidently and promote our services when possible.
-Stay on-brand and helpful. Max 300 words.
-  `.trim(),
+  Website: `You're a web consultant for Great Lakes Tech Squad. Guide users on websites, SEO, and domains.`,
+  Hardware: `You're a tech support pro. Help with printers, routers, Wi-Fi, laptops.`,
+  Software: `You're a software assistant. Help with installs, crashes, or system updates.`,
+  'Smart Home': `You're a smart home specialist. Assist with cameras, Alexa, Google Home, smart lights.`,
+  Mobile: `You're a mobile tech expert. Help with phone setup, syncing, crashes, and iCloud.`,
+  'Social Media': `You're a social media strategist. Help with Instagram, Facebook ads, growth tips.`,
+  'IT Support': `You're an IT expert. Handle networking, servers, backups, and cybersecurity.`,
+  Other: `You're a friendly tech assistant. Help with anything. Never recommend competitors.`,
 };
 
 router.post('/', async (req, res) => {
@@ -49,15 +27,14 @@ router.post('/', async (req, res) => {
   try {
     const lowered = message.toLowerCase();
     if (blockedKeywords.some(word => lowered.includes(word))) {
-      console.log('[⚠️ COMPETITOR MENTION ATTEMPT]', message);
+      console.log('[⚠️ BLOCKED TERM]', message);
     }
 
-    // 🧠 Intent classification
+    // 🧠 Intent Classification
     const intentPrompt = `
-Classify this message into one of the following categories: Website, Hardware, Social Media, IT Support, or Other.
-Only reply with the category.
-Message: "${message}"
-    `.trim();
+Classify the message into one: Website, Hardware, Software, Smart Home, Mobile, Social Media, IT Support, Other.
+Only reply with one category.
+Message: "${message}"`.trim();
 
     const intentRes = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
@@ -69,24 +46,19 @@ Message: "${message}"
 
     const systemIntent = systemMessages[intent] || systemMessages['Other'];
 
-    // 💬 Lead-capture persona message
+    // 🎯 Lead Prompt (no suggested time)
     const leadPrompt = `
-You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
+You are a smart lead-capture assistant for Great Lakes Tech Squad.
 
 🎯 GOALS:
-- Politely collect the user's **name**, **email**, and **phone number**
-- Ask **what day/time works best** for a follow-up — don't suggest one yourself.
-- Provide a **brief, confident summary** of what Great Lakes Tech Squad can do to fix their issue
-- Mention that **monthly service plans** are available for proactive support — but don't hard sell
-- Do not mention or recommend competitors.
-
-🧠 RESPONSE STYLE:
-- Friendly, professional, and solutions-focused
-- Always encourage scheduling a call
-- No more than 6 sentences per reply
+- Collect the user's name, email, and phone.
+- Ask what day/time works best for a follow-up. Do NOT suggest one.
+- Briefly summarize how we can help solve their issue (based on their question).
+- Mention our monthly support plans, but don't push.
+- Be friendly, under 6 sentences, and never mention competitors.
     `.trim();
 
-    // 🎯 Generate reply
+    // 💬 Generate AI Response
     const chat = await openai.chat.completions.create({
       model: 'gpt-3.5-turbo',
       messages: [
@@ -99,28 +71,31 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     const reply = chat.choices[0].message.content;
     console.log('[🤖 REPLY]', reply);
 
-    // 📄 Log chat
+    // ✅ Log conversation
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
-    // 🧠 Extract user info (lead)
-    let name = '';
-    let email = '';
-    let phone = '';
-    let preferredTime = '';
-    let summary = '';
-
-    const nameMatch = reply.match(/(?:thank you|hi|hello)[\s,]*([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)/i);
+    // 🔍 Lead Extraction from AI reply
+    const nameMatch = reply.match(/(?:name[:\s]*)?([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)/i);
     const emailMatch = reply.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i);
     const phoneMatch = reply.match(/(?:\+?1\s*)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/i);
     const timeMatch = reply.match(/(?:at|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(?:at)?\s*([0-9]{1,2}(?::[0-9]{2})?\s*[ap]m)/i);
 
-    name = nameMatch?.[1]?.trim() || '';
-    email = emailMatch?.[0]?.trim() || '';
-    phone = phoneMatch?.[1]?.trim() || '';
-    preferredTime = timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}`.trim() : '';
-    summary = ''; // Optional future use
+    let name = nameMatch?.[1]?.trim() || '';
+    let email = emailMatch?.[0]?.trim() || '';
+    let phone = phoneMatch?.[1]?.trim() || '';
+    let preferredTime = timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}`.trim() : '';
 
-    console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
+    // ⛑️ Fallback: Try from original message if needed
+    if (!email) email = message.match(/[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}/i)?.[0] || '';
+    if (!phone) phone = message.match(/(?:\+?1\s*)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/i)?.[1] || '';
+    if (!name) {
+      const msgName = message.match(/(?:my name is|I'm|I am)\s+([A-Z][a-z]+(?:\s[A-Z][a-z]+)?)/i);
+      name = msgName?.[1]?.trim() || '';
+    }
+
+    const summary = ''; // Reserved
+
+    console.log('[🧬 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
     if (email && phone) {
       await logAILead({ name, email, phone, preferredTime, summary });
