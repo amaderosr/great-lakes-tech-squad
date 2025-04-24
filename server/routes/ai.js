@@ -2,6 +2,7 @@ import express from 'express';
 import OpenAI from 'openai';
 import dotenv from 'dotenv';
 import { logAIChat, logAILead } from '../utils/logToSheet.js';
+import { sendLeadEmail } from '../utils/sendEmail.js';
 
 dotenv.config();
 
@@ -11,14 +12,14 @@ const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 const blockedKeywords = ['geek squad', 'fiverr', 'upwork', 'taskrabbit', 'best buy'];
 
 const systemMessages = {
-  Website: `You are a friendly AI web consultant for Great Lakes Tech Squad. Guide the user through website design, hosting, SEO, or updates. Keep answers under 300 words. Never mention competitors.`.trim(),
-  Hardware: `You're a tech support assistant for Great Lakes Tech Squad. Assist with laptops, desktops, printers, Wi-Fi, and troubleshooting. Avoid jargon, stay calm and helpful. Stay under 300 words.`.trim(),
-  'Social Media': `You're a social media strategist at Great Lakes Tech Squad. Give advice on content, platforms, ads, and growth tips. Encourage clients to hire the Squad for managed services.`.trim(),
-  'IT Support': `You're an experienced IT admin at Great Lakes Tech Squad. Answer questions on networking, backups, cybersecurity, and more. Promote monthly IT service plans where appropriate.`.trim(),
-  'Smart Home': `You're a home automation expert at Great Lakes Tech Squad. Help users with smart bulbs, Alexa, Google Home, and device integration. Stay under 300 words. No competitor mentions.`.trim(),
-  Mobile: `You're a mobile tech expert at Great Lakes Tech Squad. Help users with mobile phones, syncing, backups, and app issues. Offer brief, professional advice. Promote our tech support services.`.trim(),
-  Software: `You're a software advisor at Great Lakes Tech Squad. Help with apps, installs, updates, and software troubleshooting. Stay helpful and concise. No step-by-step, promote the Squad.`.trim(),
-  Other: `You're a general tech assistant at Great Lakes Tech Squad. Answer confidently, promote services, and avoid recommending competitors.`.trim(),
+  Website: `You're a friendly AI web consultant for Great Lakes Tech Squad.`,
+  Hardware: `You're a calm, helpful technician guiding users with hardware issues.`,
+  'Social Media': `You're a digital strategist helping users plan social campaigns.`,
+  'IT Support': `You're an experienced IT assistant helping with tech issues.`,
+  'Smart Home': `You're a smart home technician for things like Alexa or Nest.`,
+  Mobile: `You're a mobile tech expert helping with phone and app issues.`,
+  Software: `You're a software assistant for troubleshooting and installs.`,
+  Other: `You're a general tech support agent helping solve all problems.`,
 };
 
 router.post('/', async (req, res) => {
@@ -31,10 +32,10 @@ router.post('/', async (req, res) => {
       console.log('[⚠️ COMPETITOR MENTION ATTEMPT]', message);
     }
 
-    // 🔍 Intent Detection
+    // 🧠 Classify
     const intentPrompt = `
-Classify this message into one of the following categories: Website, Hardware, Social Media, IT Support, Software, Smart Home, Mobile, or Other.
-Only reply with the category.
+Classify this into: Website, Hardware, Social Media, IT Support, Software, Smart Home, Mobile, or Other.
+Only respond with the category.
 Message: "${message}"
     `.trim();
 
@@ -44,24 +45,24 @@ Message: "${message}"
     });
 
     const intent = intentRes.choices[0].message.content.trim();
-    console.log('[🧠 INTENT]', intent);
-
     const systemIntent = systemMessages[intent] || systemMessages['Other'];
 
+    // 📬 Core AI Response
     const leadPrompt = `
 You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
 
 🎯 GOALS:
-- Politely collect the user's **name**, **email**, and **phone number**
-- Ask **what day/time works best** for a follow-up — don't suggest one yourself.
-- Provide a **brief, confident summary** of what Great Lakes Tech Squad can do to fix their issue
-- Mention that **monthly service plans** are available for proactive support — but don't hard sell
-- Do not mention or recommend competitors.
+- Collect **name**, **email**, and **phone**
+- Ask **what day/time works best** for follow-up
+- Confirm when someone from the team will reach out
+- Ask a follow-up question about the user's issue
+- Mention **monthly service plans** for proactive support (no hard sell)
+- Never mention competitors
 
 🧠 RESPONSE STYLE:
-- Friendly, professional, and solutions-focused
-- Always encourage scheduling a call
-- No more than 6 sentences per reply
+- Professional, friendly, under 6 sentences
+- Thank user for details, confirm next steps
+- Ask: “Is there anything specific you’d like us to prepare before our call?”
 `.trim();
 
     const chat = await openai.chat.completions.create({
@@ -76,32 +77,30 @@ You are a smart lead-capture and triage assistant for Great Lakes Tech Squad.
     const reply = chat.choices[0].message.content;
     console.log('[🤖 REPLY]', reply);
 
-    // 📄 Log conversation
+    // ✍️ Log full convo
     await logAIChat({ userMessage: message, botReply: reply, intent });
 
-    // 🕵️ Extract data from combined context
-    const fullText = `${message}\n${reply}`;
-    const sanitize = (str) => str?.trim().replace(/[.,]$/, '') || '';
+    // 🕵️ Extract
+    const sanitize = (v) => v?.trim().replace(/[.,]+$/, '') || '';
 
-    const nameMatch = fullText.match(/(?:my name is|name[:\-]?)\s*([A-Z][a-z]+\s?[A-Z]?[a-z]*)/i);
-    const emailMatch = fullText.match(/([a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,})/i);
-    const phoneMatch = fullText.match(/(?:\+?1\s*)?(\(?\d{3}\)?[\s.-]?\d{3}[\s.-]?\d{4})/i);
-    const timeMatch = fullText.match(/(?:at|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(?:at)?\s*([0-9]{1,2}(?::[0-9]{2})?\s*[ap]m)/i);
+    const nameMatch = message.match(/(?:my name is|name[:\-]?)\s*([A-Z][a-z]+\s?[A-Z]?[a-z]*)/i);
+    const emailMatch = message.match(/(?:email is|email[:\-]?)\s*([^\s]+)/i);
+    const phoneMatch = message.match(/(?:phone is|phone[:\-]?)\s*([^\s]+)/i);
+    const timeMatch = message.match(/(?:at|on)?\s*(Monday|Tuesday|Wednesday|Thursday|Friday|Saturday|Sunday)?\s*(?:at)?\s*([0-9]{1,2}(?::[0-9]{2})?\s*[ap]m)/i);
+    const summary = reply.split('\n').find(line => line.toLowerCase().includes('great lakes tech squad'))?.trim() || '';
 
     const name = sanitize(nameMatch?.[1]);
     const email = sanitize(emailMatch?.[1]);
     const phone = sanitize(phoneMatch?.[1]);
     const preferredTime = sanitize(timeMatch ? `${timeMatch[1] || ''} ${timeMatch[2]}` : '');
-    const summary = reply.split('\n').find(line => line.toLowerCase().includes('great lakes tech squad'))?.trim() || '';
-
-    console.log('[🔍 LEAD EXTRACTED]', { name, email, phone, preferredTime });
 
     const validEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     const validPhone = /^\d{10}$|^\d{3}[-.\s]?\d{3}[-.\s]?\d{4}$/.test(phone);
 
     if (validEmail && validPhone) {
       await logAILead({ name, email, phone, preferredTime, summary });
-      console.log(`[✅ LEAD LOGGED] ${name} - ${email}`);
+      await sendLeadEmail({ name, email, phone, preferredTime, summary });
+      console.log(`[✅ LEAD LOGGED & EMAILED] ${name}`);
     } else {
       console.warn('[⚠️ INCOMPLETE OR INVALID LEAD]', { name, email, phone });
     }
